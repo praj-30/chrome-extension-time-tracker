@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Time Tracker Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+      background-color: #f8f9fa;
+    }
+
+    h1 {
+      margin-bottom: 40px;
+      color: #333;
+    }
+
+    canvas {
+      width: 90% !important;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .legend {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    .legend span {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .productive { background-color: rgba(75, 192, 192, 0.7); }
+    .unproductive { background-color: rgba(255, 99, 132, 0.7); }
+  </style>
+</head>
+<body>
+  <h1>📊 Time Spent on Websites</h1>
+  <canvas id="timeChart"></canvas>
+
+  <div class="legend">
+    <p><span class="productive"></span> Productive &nbsp;&nbsp;&nbsp; <span class="unproductive"></span> Unproductive</p>
+  </div>
+
+  <script>
+    // Define what is considered productive
+    const productiveSites = [
+      "chatgpt.com",
+      "www.google.com",
+      "github.com",
+      "stackoverflow.com",
+      "docs.google.com"
+    ];
+
+    async function loadData() {
+      const res = await fetch('http://localhost:3000/report');
+      const data = await res.json();
+
+      // Group and classify
+      const grouped = {};
+      const classification = {};
+
+      data.forEach(entry => {
+        const site = entry.site;
+        grouped[site] = (grouped[site] || 0) + entry.timeSpent;
+        classification[site] = productiveSites.includes(site) ? "Productive" : "Unproductive";
+      });
+
+      const labels = Object.keys(grouped);
+      const values = Object.values(grouped);
+      const colors = labels.map(site =>
+        classification[site] === "Productive"
+          ? 'rgba(75, 192, 192, 0.7)' // green
+          : 'rgba(255, 99, 132, 0.7)' // red
+      );
+
+      const ctx = document.getElementById('timeChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Time Spent (seconds)',
+            data: values,
+            backgroundColor: colors
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: 'Time Spent per Website (Classified)'
+            }
+          }
+        }
+      });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
